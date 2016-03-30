@@ -213,7 +213,7 @@ class Buyout:
         return "{} {} {}".format(self.type, self.value, self.currency)
 
 
-def parse_api(id, stats, cursor, db_connection, save_mods):
+def parse_api(id, stats, cursor, db_connection, save_mods, save_raw):
     """
     Put items/tab from the API in DB
     return next_change_id
@@ -224,13 +224,17 @@ def parse_api(id, stats, cursor, db_connection, save_mods):
     stats.start_fetch()
     r = requests.get(url, headers={'Accept-Encoding': 'gzip'})
     data = json.loads(r.text)
-    with open('changes/'+id, 'w+') as f:
-        f.write(r.text)
+    if save_raw:
+        with open('changes/'+id, 'w+') as f:
+            f.write(r.text)
     stats.end_fetch()
     stats.start_process()
     nb_items = 0
     for tab in data["stashes"]:
-        bo = Buyout.from_text(tab["stash"])
+        try:
+            bo = Buyout.from_text(tab["stash"])
+        except:
+            bo = Buyout.from_text("none")
         tmp = Tab(tab["id"], tab["accountName"], tab["stash"], bo)
         for item in tab["items"]:
             tmp.add_item(item)
@@ -253,10 +257,15 @@ class LiveStats:
     def __init__(self):
         self.current = copy.copy(LiveStats.BASE_VALUE)
         self.history = []
+        self.first_init = True
 
     def new_iter(self):
-        self.history.append(self.current)
-        self.current = copy.copy(LiveStats.BASE_VALUE)
+        
+        if self.first_init:
+            self.first_init = False
+        else:
+            self.history.append(self.current)
+            self.current = copy.copy(LiveStats.BASE_VALUE)
         self.current["start"] = time.time()
 
     def start_fetch(self):
@@ -292,14 +301,14 @@ class LiveStats:
     def __str__(self):
         if len(self.history) == 0:
             return "Wait for at least one iteration to be completed !"
-
         total_items = sum([x["items"] for x in self.history]) 
+        total_time = sum(x["time"] for x in self.history)
         total_time_fetch = sum([x["time_fetch"] for x in self.history])
         total_time_process = sum([x["time_process"] for x in self.history])
         speed_fetch = total_items / total_time_fetch
         speed_process = total_items / total_time_process
-        out = "Status : parsed {} total items ; fetch took {}s, process took {}s.".format(
-            total_items, total_time_fetch, total_time_process)
+        out = "Status : parsed {} total items in {} seconds ; fetch took {}s, process took {}s.".format(
+            total_items,total_time, total_time_fetch, total_time_process)
         out += "fetch speed is {} item/s, process speed is {} item/s".format(
             speed_fetch, speed_process)
         return out

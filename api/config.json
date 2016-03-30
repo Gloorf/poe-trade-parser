@@ -6,5 +6,6 @@
         "name": "poe4"
     },
     "insert_mode": "normal",
-    "save_mods": false
+    "save_mods": false,
+    "save_raw": false
 }

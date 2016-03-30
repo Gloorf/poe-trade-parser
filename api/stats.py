@@ -7,6 +7,20 @@ import psycopg2
 import json
 import pickle
 import time
+from datetime import datetime
+def process_players(players, timestamp, second_diff):
+    out = {"Hardcore": 0, "Standard": 0, "Perandus": 0,
+           "Hardcore Perandus": 0, "none": 0, "total_players" : len(players),
+           "timestamp": timestamp}
+    now = datetime.fromtimestamp(float(timestamp))
+    for p in players:
+        for s in p.stats:
+            diff = now - s['last_update']
+            if diff.total_seconds() < second_diff:
+                out[s['league']] += 1
+    return out
+
+
 if __name__ == "__main__":
     # db init
     with open('config.json', 'r') as f:
@@ -41,8 +55,17 @@ if __name__ == "__main__":
                 
     print("I've got {} tabs and {} players".format(len(tabs), len(players)))
     time = str(int(time.time()))
-    with open("statistics/tabs-"+time, "wb") as f:
+    with open("statistics_raw/tabs-"+time, "wb") as f:
         pickle.dump(tabs, f)
-    with open("statistics/players-"+time, "wb") as f:
+    with open("statistics_raw/players-"+time, "wb") as f:
         pickle.dump(players, f)
+    stats = { '24h': process_players(players, time, 24*3600),
+             '1h': process_players(players, time, 1*3600),
+             '3d': process_players(players, time, 3*24*3600),
+             '1w': process_players(players, time, 7*24*3600)}
+    with open("statistics_processed/players-"+time, "wb") as f:
+        pickle.dump(stats, f)
+
+
+
 
