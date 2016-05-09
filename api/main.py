@@ -91,6 +91,7 @@ if __name__ == "__main__":
     scheduler.add_job(lambda: logger.info(stats), 'interval', seconds=10)
     scheduler.start()
     logger.info("Starting parse with id {}".format(id))
+    time_start = time.time()
     need_continue = True
     try:
         while need_continue:
@@ -103,6 +104,8 @@ if __name__ == "__main__":
             if stats.current["time"] < 1.1:
                 logger.debug("Sleeping a little to avoid throttling")
                 time.sleep(1.1 - stats.current["time"])
+            if time_start + 60*10 < time.time():
+                need_continue = False
     except Exception as e:
         logger.error("Stopping thread cause {}".format(e))
     finally:

@@ -48,19 +48,19 @@ class Tab:
             self.league = self.items[0].league
 
     def save_db(self, cursor, conn, save_mods):
-        sql = """INSERT INTO tabs (id, owner, name, buyout, league, item_count, last_update) SELECT %s, %s, %s, %s, %s, %s, NOW()
-         WHERE NOT EXISTS (SELECT 1 FROM tabs WHERE id=%s);"""
+        sql = """INSERT INTO tabs (id, owner, name, buyout, league, item_count, last_update) VALUES ( %s, %s, %s, %s, %s, %s, NOW())
+         ON CONFLICT (id) DO UPDATE SET id=%s, owner=%s, name=%s, buyout=%s, league=%s, item_count =%s, last_update=NOW();"""
         cursor.execute(sql, (self.id, self.owner, self.name, str(self.buyout),
-                             self.league, len(self.items), self.id))
-        sql = "INSERT INTO players (name) SELECT %s WHERE NOT EXISTS (SELECT 1 FROM players WHERE name=%s)" 
-        cursor.execute(sql, (self.owner,self.owner))
+                             self.league, len(self.items),
+                             self.id, self.owner, self.name, str(self.buyout),
+                             self.league, len(self.items)) )
+        sql = "INSERT INTO players (name) VALUES (%s) ON CONFLICT (name) DO NOTHING;"
+        cursor.execute(sql, (self.owner,))
         # If no record matching player.id_sql + league exists, create a new one
         # Else update the old one (with the current date)
-        sql = """INSERT INTO players_league (player, league, last_update, nb_items) 
-        SELECT p.name , %s, NOW(), 0 FROM players p WHERE name=%s
-        AND NOT EXISTS (SELECT 1 FROM players_league WHERE player=p.name AND league=%s)"""
-        cursor.execute(sql, (self.league, self.owner,
-                             self.league))
+        sql = """INSERT INTO players_league (player, league, last_update, nb_items) VALUES ( %s , %s, NOW(), 0)
+        ON CONFLICT (player, league) DO UPDATE SET last_update=NOW();"""
+        cursor.execute(sql, (self.owner, self.league))
 
 
         self.save_items(cursor, conn, save_mods)

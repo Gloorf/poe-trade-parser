@@ -10,7 +10,10 @@ import time
 from datetime import datetime
 def process_players(players, timestamp, second_diff):
     out = {"Hardcore": 0, "Standard": 0, "Perandus": 0,
-           "Hardcore Perandus": 0, "none": 0, "total_players" : len(players),
+           "Hardcore Perandus": 0, "none": 0, 
+           "Perandus Flashback HC": 0,
+           "Perandus Flashback": 0,
+           "total_players" : len(players),
            "timestamp": timestamp}
     now = datetime.fromtimestamp(float(timestamp))
     for p in players:
@@ -62,7 +65,8 @@ if __name__ == "__main__":
     stats = { '24h': process_players(players, time, 24*3600),
              '1h': process_players(players, time, 1*3600),
              '3d': process_players(players, time, 3*24*3600),
-             '1w': process_players(players, time, 7*24*3600)}
+             '1w': process_players(players, time, 7*24*3600),
+             '28d': process_players(players, time, 28*24*3600)}
     with open("statistics_processed/players-"+time, "wb") as f:
         pickle.dump(stats, f)
 

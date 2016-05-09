@@ -15,7 +15,8 @@ f = lambda x: x['timestamp']
 stats = {'24h': sorted([e['24h'] for e in all_stats], key = f),
          '1h': sorted([e['1h'] for e in all_stats], key = f),
          '3d':sorted([e['3d'] for e in all_stats], key = f),
-         '1w': sorted([e['1w'] for e in all_stats], key = f)
+         '1w': sorted([e['1w'] for e in all_stats], key = f),
+         '28d': sorted([e['28d'] for e in all_stats], key=f),
         }
 #timestamp ofc
 oldest = 1457709303
@@ -24,6 +25,7 @@ oldest_t = datetime.fromtimestamp(oldest)
 stats['24h'] = [e for e in stats['24h'] if oldest + 1*24*3600 < int(e['timestamp'])] 
 stats['1w'] = [e for e in stats['1w'] if oldest + 7*24*3600 < int(e['timestamp'])] 
 stats['3d'] = [e for e in stats['3d'] if oldest + 3*24*3600 < int(e['timestamp'])] 
+stats['28d'] = [e for e in stats['28d'] if oldest + 28*24*3600 < int(e['timestamp'])]
 print("done parsing !")
 print("starting plot")
 import matplotlib
@@ -35,7 +37,7 @@ xfmt = md.DateFormatter('%m-%d')
 ax.xaxis.set_major_formatter(xfmt)
 for key, value in stats.items():
     x = [datetime.fromtimestamp(float(e["timestamp"])) for e in value]
-    leagues = ["Perandus", "Standard", "Hardcore", "Hardcore Perandus"]
+    leagues = ["Perandus", "Standard", "Hardcore", "Hardcore Perandus", "Perandus Flashback", "Perandus Flashback HC"]
     for l in leagues:
         y = [e[l] for e in value]
         plt.cla()
@@ -43,7 +45,8 @@ for key, value in stats.items():
         ax = plt.gca()
         xfmt = md.DateFormatter('%d-%m')
         ax.xaxis.set_major_formatter(xfmt)
-        plt.plot(x, y, 'ro')
+        plt.plot(x, y)
+        ax.set_ylim(ymin=0)
         plt.title("Activity in the last {} in {}".format(key, l))
         plt.show()
         plt.savefig("graphes/{}_{}.png".format(key,l))
